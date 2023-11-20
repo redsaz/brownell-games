@@ -43,7 +43,7 @@ class GameScene extends Phaser.Scene {
     }
 
     preload() {
-        this.load.setBaseURL("/");
+        this.load.setBaseURL(".");
 
         this.load.image("bg", "assets/bg/grayblur.jpg");
         this.load.image("bodySegment", "assets/sprite/sphere.png");
