@@ -44,13 +44,35 @@ class GameScene extends Phaser.Scene {
     }
 
     isWall(x, y) {
-        const candidate = this.levelmap.getTileAt(this.headX, this.headY, false, 0);
-        return candidate !== null && candidate.index > 0;
+        const candidate = this.levelmap.getTileAt(x, y, false, 0);
+        return candidate !== null && candidate.index == 1;
     }
 
     isPlayer(x, y) {
-        const candidate = this.levelmap.getTileAt(this.headX, this.headY, false, "playerLayer");
-        return candidate !== null && candidate.index > 0;
+        const candidate = this.levelmap.getTileAt(x, y, false, "dynLayer");
+        return candidate !== null && candidate.index == 2;
+    }
+
+    isFood(x, y) {
+        const candidate = this.levelmap.getTileAt(x, y, false, "dynLayer");
+        return candidate !== null && candidate.index == 3;
+    }
+
+    getRandomInt(min, max) {
+        return min + Math.floor(Math.random() * (max - min));
+    }
+
+    placeFood() {
+        var foundSpot = false;
+        while (!foundSpot) {
+            const x = this.getRandomInt(0, 32);
+            const y = this.getRandomInt(0, 32);
+            if (!this.isWall(x, y) && !this.isPlayer(x, y) && !this.isFood(x, y)) {
+                const foodTile = this.levelmap.putTileAt(3, x, y, false, "dynLayer");
+                foodTile.tint = 0xffff00;
+                foundSpot = true;
+            }
+        }
     }
 
     preload() {
@@ -67,7 +89,7 @@ class GameScene extends Phaser.Scene {
         this.levelmap = this.make.tilemap({ key: "levelmap", tileWidth: 32, tileHeight: 32 });
         const tiles = this.levelmap.addTilesetImage("tiles", null, 32, 32, 0, 0);
         this.levelmap.createLayer(0, tiles, 0, 0);
-        this.levelmap.createBlankLayer("playerLayer", tiles, 0, 0);
+        this.levelmap.createBlankLayer("dynLayer", tiles, 0, 0);
 
         this.input.keyboard.enabled = true;
         this.input.keyboard.addCapture("UP,RIGHT,DOWN,LEFT");
@@ -87,6 +109,8 @@ class GameScene extends Phaser.Scene {
         this.movedAtMs = null;
         this.moveMs = 16.66667 * 5;
         this.levelMap = null;
+
+        this.placeFood();
     }
 
     update(time, delta) {
@@ -137,15 +161,23 @@ class GameScene extends Phaser.Scene {
             if (this.isWall(this.headX, this.headY) || this.isPlayer(this.headX, this.headY)) {
                 this.scene.restart();
             } else {
+                if (this.isFood(this.headX, this.headY)) {
+                    this.levelmap.removeTileAt(this.headX, this.headY, true, false, "dynLayer");
+                    this.placeFood();
+                    this.bodyLength += 10;
+                    if (this.bodyLength > this.bodyLengthMax) {
+                        this.bodyLength = this.bodyLengthMax;
+                    }
+                }
                 // Put body piece in new position
                 this.bodyX[this.bodyIndex] = this.headX;
                 this.bodyY[this.bodyIndex] = this.headY;
-                const playerTile = this.levelmap.putTileAt(2, this.headX, this.headY, false, "playerLayer");
+                const playerTile = this.levelmap.putTileAt(2, this.headX, this.headY, false, "dynLayer");
                 playerTile.tint = 0x2fff2f;
 
                 // Remove body piece "tail"
                 this.bodyIndex = (this.bodyIndex + 1) % this.bodyLength;
-                this.levelmap.removeTileAt(this.bodyX[this.bodyIndex], this.bodyY[this.bodyIndex], true, false, "playerLayer");
+                this.levelmap.removeTileAt(this.bodyX[this.bodyIndex], this.bodyY[this.bodyIndex], true, false, "dynLayer");
             }
         }
     }
