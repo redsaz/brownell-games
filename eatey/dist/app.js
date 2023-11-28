@@ -5,6 +5,18 @@ const RIGHT = Symbol("right");
 const DOWN = Symbol("down");
 const LEFT = Symbol("left");
 
+const GROW_AMOUNT = 10;
+const DELAY_MS = 16.66666 * 5;
+const START_X = 15;
+const START_Y = 15;
+const START_LENGTH = 4;
+const MAX_BODY_LENGTH = 1024;
+const BACKGROUND_TINT = 0x005f00;
+const LEVEL_WIDTH = 32;
+const LEVEL_HEIGHT = 32;
+const TILE_LENGTH = 32;
+
+
 class GameScene extends Phaser.Scene {
 
     keydown(event) {
@@ -51,8 +63,8 @@ class GameScene extends Phaser.Scene {
     placeFood() {
         let foundSpot = false;
         while (!foundSpot) {
-            const x = this.getRandomInt(0, 32);
-            const y = this.getRandomInt(0, 32);
+            const x = this.getRandomInt(0, LEVEL_WIDTH);
+            const y = this.getRandomInt(0, LEVEL_HEIGHT);
             if (!this.isWall(x, y) && !this.isPlayer(x, y) && !this.isFood(x, y)) {
                 const foodTile = this.levelmap.putTileAt(3, x, y, false, "dynLayer");
                 foodTile.tint = 0xffff00;
@@ -70,10 +82,13 @@ class GameScene extends Phaser.Scene {
     }
 
     create() {
-        this.add.image(512, 512, "bg").setTint(0x005f00);
+        const bg = this.add.image(512, 512, "bg");
+        if (BACKGROUND_TINT !== undefined && BACKGROUND_TINT !== null) {
+            bg.setTint(BACKGROUND_TINT);
+        }
 
-        this.levelmap = this.make.tilemap({ key: "levelmap", tileWidth: 32, tileHeight: 32 });
-        const tiles = this.levelmap.addTilesetImage("tiles", null, 32, 32, 0, 0);
+        this.levelmap = this.make.tilemap({ key: "levelmap", tileWidth: TILE_LENGTH, tileHeight: TILE_LENGTH });
+        const tiles = this.levelmap.addTilesetImage("tiles", null, TILE_LENGTH, TILE_LENGTH, 0, 0);
         this.levelmap.createLayer(0, tiles, 0, 0);
         this.levelmap.createBlankLayer("dynLayer", tiles, 0, 0);
 
@@ -84,16 +99,15 @@ class GameScene extends Phaser.Scene {
 
         // Reset these values every time the level is (re)started
         this.requestDir = null;
-        this.headX = 15;
-        this.headY = 15;
+        this.headX = START_X;
+        this.headY = START_Y;
         this.headDir = RIGHT;
-        this.bodyLengthMax = 1024;
-        this.bodyX = Array(this.bodyLengthMax);
-        this.bodyY = Array(this.bodyLengthMax);
+        this.bodyX = Array(MAX_BODY_LENGTH);
+        this.bodyY = Array(MAX_BODY_LENGTH);
         this.bodyHead = 0;
-        this.bodyLength = 4;
+        this.bodyLength = START_LENGTH;
         this.movedAtMs = null;
-        this.moveMs = 16.66667 * 5;
+        this.moveMs = DELAY_MS;
         this.levelMap = null;
 
         this.placeFood();
@@ -149,9 +163,9 @@ class GameScene extends Phaser.Scene {
                 if (this.isFood(this.headX, this.headY)) {
                     this.levelmap.removeTileAt(this.headX, this.headY, true, false, "dynLayer");
                     this.placeFood();
-                    this.bodyLength += 10;
-                    if (this.bodyLength > this.bodyLengthMax) {
-                        this.bodyLength = this.bodyLengthMax;
+                    this.bodyLength += GROW_AMOUNT;
+                    if (this.bodyLength > MAX_BODY_LENGTH) {
+                        this.bodyLength = MAX_BODY_LENGTH;
                     }
                 }
                 // Put body piece in new position
@@ -159,10 +173,10 @@ class GameScene extends Phaser.Scene {
                 this.bodyY[this.bodyHead] = this.headY;
                 const playerTile = this.levelmap.putTileAt(2, this.headX, this.headY, false, "dynLayer");
                 playerTile.tint = 0x2fff2f;
-                this.bodyHead = (this.bodyHead + 1) % this.bodyLengthMax;
+                this.bodyHead = (this.bodyHead + 1) % MAX_BODY_LENGTH;
 
                 // Remove body piece "tail"
-                const tail = (this.bodyHead + this.bodyLengthMax - this.bodyLength) % this.bodyLengthMax;
+                const tail = (this.bodyHead + MAX_BODY_LENGTH - this.bodyLength) % MAX_BODY_LENGTH;
                 this.levelmap.removeTileAt(this.bodyX[tail], this.bodyY[tail], true, false, "dynLayer");
                 this.bodyX[tail] = undefined;
                 this.bodyY[tail] = undefined;
