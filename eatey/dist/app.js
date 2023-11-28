@@ -11,7 +11,10 @@ const START_X = 15;
 const START_Y = 15;
 const START_LENGTH = 4;
 const MAX_BODY_LENGTH = 1024;
+const BODY_TINT = 0x2fff2f;
+const BACKGROUND_IMAGE = "assets/bg/grayblur.jpg";
 const BACKGROUND_TINT = 0x005f00;
+const FOOD_TINT = 0xffff00;
 const LEVEL_WIDTH = 32;
 const LEVEL_HEIGHT = 32;
 const TILE_LENGTH = 32;
@@ -67,7 +70,7 @@ class GameScene extends Phaser.Scene {
             const y = this.getRandomInt(0, LEVEL_HEIGHT);
             if (!this.isWall(x, y) && !this.isPlayer(x, y) && !this.isFood(x, y)) {
                 const foodTile = this.levelmap.putTileAt(3, x, y, false, "dynLayer");
-                foodTile.tint = 0xffff00;
+                foodTile.tint = FOOD_TINT;
                 foundSpot = true;
             }
         }
@@ -76,15 +79,19 @@ class GameScene extends Phaser.Scene {
     preload() {
         this.load.setBaseURL(".");
 
-        this.load.image("bg", "assets/bg/grayblur.jpg");
+        if (BACKGROUND_IMAGE) {
+            this.load.image("bg", BACKGROUND_IMAGE);
+        }
         this.load.image("tiles", 'assets/sprite/tiles32.png');
         this.load.tilemapCSV("levelmap", "assets/level/1.csv");
     }
 
     create() {
-        const bg = this.add.image(512, 512, "bg");
-        if (BACKGROUND_TINT !== undefined && BACKGROUND_TINT !== null) {
-            bg.setTint(BACKGROUND_TINT);
+        if (BACKGROUND_IMAGE) {
+            const bg = this.add.image(512, 512, "bg");
+            if (BACKGROUND_TINT !== undefined && BACKGROUND_TINT !== null) {
+                bg.setTint(BACKGROUND_TINT);
+            }
         }
 
         this.levelmap = this.make.tilemap({ key: "levelmap", tileWidth: TILE_LENGTH, tileHeight: TILE_LENGTH });
@@ -172,7 +179,7 @@ class GameScene extends Phaser.Scene {
                 this.bodyX[this.bodyHead] = this.headX;
                 this.bodyY[this.bodyHead] = this.headY;
                 const playerTile = this.levelmap.putTileAt(2, this.headX, this.headY, false, "dynLayer");
-                playerTile.tint = 0x2fff2f;
+                playerTile.tint = BODY_TINT;
                 this.bodyHead = (this.bodyHead + 1) % MAX_BODY_LENGTH;
 
                 // Remove body piece "tail"
