@@ -7,20 +7,6 @@ const LEFT = Symbol("left");
 
 class GameScene extends Phaser.Scene {
 
-    // Note: Change the values in create() instead.
-    requestDir = null;
-    headX = 15;
-    headY = 15;
-    headDir = RIGHT;
-    bodyLengthMax = 1024;
-    bodyX = [];
-    bodyY = [];
-    bodyIndex = 0;
-    bodyLength = 10;
-    movedAtMs = null;
-    moveMs = 16.66667 * 5;
-    levelMap = null;
-
     keydown(event) {
         switch (event.key) {
             case "ArrowUp":
@@ -104,8 +90,8 @@ class GameScene extends Phaser.Scene {
         this.bodyLengthMax = 1024;
         this.bodyX = Array(this.bodyLengthMax);
         this.bodyY = Array(this.bodyLengthMax);
-        this.bodyIndex = 0;
-        this.bodyLength = 10;
+        this.bodyHead = 0;
+        this.bodyLength = 4;
         this.movedAtMs = null;
         this.moveMs = 16.66667 * 5;
         this.levelMap = null;
@@ -169,14 +155,14 @@ class GameScene extends Phaser.Scene {
                     }
                 }
                 // Put body piece in new position
-                this.bodyX[this.bodyIndex] = this.headX;
-                this.bodyY[this.bodyIndex] = this.headY;
+                this.bodyX[this.bodyHead] = this.headX;
+                this.bodyY[this.bodyHead] = this.headY;
                 const playerTile = this.levelmap.putTileAt(2, this.headX, this.headY, false, "dynLayer");
                 playerTile.tint = 0x2fff2f;
-                this.bodyIndex = (this.bodyIndex + 1) % this.bodyLengthMax;
+                this.bodyHead = (this.bodyHead + 1) % this.bodyLengthMax;
 
                 // Remove body piece "tail"
-                const tail = (this.bodyIndex + this.bodyLengthMax - this.bodyLength) % this.bodyLengthMax;
+                const tail = (this.bodyHead + this.bodyLengthMax - this.bodyLength) % this.bodyLengthMax;
                 this.levelmap.removeTileAt(this.bodyX[tail], this.bodyY[tail], true, false, "dynLayer");
                 this.bodyX[tail] = undefined;
                 this.bodyY[tail] = undefined;
