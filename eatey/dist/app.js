@@ -13,12 +13,12 @@ class GameScene extends Phaser.Scene {
     headDir = RIGHT;
     bodyX = [];
     bodyY = [];
-    bodySegments = [];
     bodyIndex = 0;
     bodyLength = 10;
     bodyLengthMax = 512;
     movedAtMs = null;
     moveMs = 16.66667 * 5;
+    levelMap = null;
 
     keydown(event) {
         switch (event.key) {
@@ -46,25 +46,17 @@ class GameScene extends Phaser.Scene {
         this.load.setBaseURL(".");
 
         this.load.image("bg", "assets/bg/grayblur.jpg");
-        this.load.image("bodySegment", "assets/sprite/sphere.png");
+        this.load.image("tiles", 'assets/sprite/tiles32.png');
+        this.load.tilemapCSV("levelmap", "assets/level/1.csv");
     }
 
     create() {
         this.add.image(512, 512, "bg").setTint(0x005f00);
 
-        // const sphere = this.physics.add.image(400, 100, "bodySegment");
-        // sphere.setVelocity(100, 200);
-        // sphere.setBounce(1, 1);
-        // sphere.setCollideWorldBounds(true);
-
-        for (let i = 0; i < this.bodyLengthMax; ++i) {
-            const bodyPart = this.add.image(-1024, -1024, "bodySegment");
-            bodyPart.setTint(0x2fff2f);
-            bodyPart.setScale(0.125);
-            bodyPart.setVisible(false);
-
-            this.bodySegments.push(bodyPart);
-        }
+        this.levelmap = this.make.tilemap({ key: "levelmap", tileWidth: 32, tileHeight: 32 });
+        const tiles = this.levelmap.addTilesetImage("tiles", null, 32, 32, 0, 0);
+        this.levelmap.createLayer(0, tiles, 0, 0);
+        this.levelmap.createBlankLayer("playerLayer", tiles, 0, 0);
 
         this.input.keyboard.enabled = true;
         this.input.keyboard.addCapture("UP,RIGHT,DOWN,LEFT");
@@ -115,9 +107,16 @@ class GameScene extends Phaser.Scene {
                     this.headX -= 1;
                     break;
             }
-            this.bodySegments[this.bodyIndex].setPosition((this.headX * 32) + 16, (this.headY * 32) + 16);
-            this.bodySegments[this.bodyIndex].setVisible(true);
+
+            // Put body piece in new position
+            this.bodyX[this.bodyIndex] = this.headX;
+            this.bodyY[this.bodyIndex] = this.headY;
+            const playerTile = this.levelmap.putTileAt(2, this.headX, this.headY, false, "playerLayer");
+            playerTile.tint = 0x2fff2f;
+
+            // Remove body piece "tail"
             this.bodyIndex = (this.bodyIndex + 1) % this.bodyLength;
+            this.levelmap.removeTileAt(this.bodyX[this.bodyIndex], this.bodyY[this.bodyIndex], true, false, "playerLayer");
         }
     }
 }
